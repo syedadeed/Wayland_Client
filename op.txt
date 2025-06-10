@@ -1,0 +1,80 @@
+{Default Queue}  -> wl_display#1.get_registry(new id wl_registry#2)
+
+{Default Queue}  -> wl_display#1.sync(new id wl_callback#3)
+{Display Queue} wl_display#1.delete_id(3)
+
+{Default Queue} wl_registry#2.global(3, "wl_compositor", 6)
+{Default Queue}  -> wl_registry#2.bind(3, "wl_compositor", 6, new id [unknown]#4)
+{Default Queue} wl_registry#2.global(5, "wl_shm", 1)
+{Default Queue}  -> wl_registry#2.bind(5, "wl_shm", 1, new id [unknown]#5)
+{Default Queue} wl_registry#2.global(37, "xdg_wm_base", 6)
+{Default Queue}  -> wl_registry#2.bind(37, "xdg_wm_base", 6, new id [unknown]#6)
+
+{Default Queue} wl_callback#3.done(454)
+
+{Default Queue}  -> wl_compositor#4.create_surface(new id wl_surface#3)
+{Default Queue}  -> xdg_wm_base#6.get_xdg_surface(new id xdg_surface#7, wl_surface#3)
+{Default Queue}  -> xdg_surface#7.get_toplevel(new id xdg_toplevel#8)
+{Default Queue}  -> wl_surface#3.commit()
+
+{Default Queue} discarded wl_shm#5.format(0)
+{Default Queue} discarded wl_shm#5.format(1)
+{Default Queue} discarded wl_shm#5.format(875709016)
+{Default Queue} discarded wl_shm#5.format(808665665)
+
+{Default Queue} discarded xdg_toplevel#8.wm_capabilities(array[8])
+{Default Queue} discarded xdg_toplevel#8.configure(683, 768, array[16])
+{Default Queue} xdg_surface#7.configure(455)
+{Default Queue}  -> xdg_surface#7.ack_configure(455)
+
+{Default Queue}  -> wl_shm#5.create_pool(new id wl_shm_pool#9, fd 5, 4196352)
+{Default Queue}  -> wl_shm_pool#9.create_buffer(new id wl_buffer#10, 0, 1366, 768, 5464, 0)
+
+{Default Queue}  -> wl_surface#3.frame(new id wl_callback#11)
+
+{Default Queue}  -> wl_surface#3.attach(wl_buffer#10, 0, 0)
+{Default Queue}  -> wl_surface#3.damage_buffer(0, 0, 1366, 768)
+{Default Queue}  -> wl_surface#3.commit()
+
+{Default Queue} discarded xdg_toplevel#8.configure(683, 768, array[20])
+{Default Queue} discarded wl_surface#3.preferred_buffer_scale(1)
+{Default Queue} discarded wl_surface#3.preferred_buffer_transform(0)
+{Default Queue} discarded xdg_toplevel#8.configure(1366, 768, array[20])
+{Default Queue} discarded xdg_toplevel#8.configure(1366, 768, array[24])
+{Default Queue} discarded xdg_toplevel#8.configure(1366, 768, array[20])
+{Default Queue} discarded xdg_toplevel#8.configure(1366, 768, array[24])
+{Default Queue} discarded xdg_toplevel#8.configure(1366, 764, array[24])
+{Default Queue} discarded wl_surface#3.preferred_buffer_scale(1)
+{Default Queue} discarded wl_surface#3.preferred_buffer_transform(0)
+{Default Queue} discarded wl_buffer#10.release()
+{Default Queue} xdg_surface#7.configure(456)
+{Default Queue}  -> xdg_surface#7.ack_configure(456)
+
+{Display Queue} wl_display#1.delete_id(11)
+{Default Queue} wl_callback#11.done(186702)
+
+{Default Queue}  -> wl_surface#3.frame(new id wl_callback#11)
+{Default Queue}  -> wl_surface#3.attach(wl_buffer#10, 0, 0)
+{Default Queue}  -> wl_surface#3.damage_buffer(0, 0, 1366, 768)
+{Default Queue}  -> wl_surface#3.commit()
+
+{Default Queue} discarded wl_buffer#10.release()
+{Display Queue} wl_display#1.delete_id(11)
+{Default Queue} wl_callback#11.done(186718)
+
+{Default Queue}  -> wl_surface#3.frame(new id wl_callback#11)
+{Default Queue}  -> wl_surface#3.attach(wl_buffer#10, 0, 0)
+{Default Queue}  -> wl_surface#3.damage_buffer(0, 0, 1366, 768)
+{Default Queue}  -> wl_surface#3.commit()
+
+{Default Queue} discarded wl_buffer#10.release()
+{Display Queue} wl_display#1.delete_id(11)
+{Default Queue} wl_callback#11.done(186735)
+
+{Default Queue}  -> wl_surface#3.frame(new id wl_callback#11)
+{Default Queue}  -> wl_surface#3.attach(wl_buffer#10, 0, 0)
+{Default Queue}  -> wl_surface#3.damage_buffer(0, 0, 1366, 768)
+{Default Queue}  -> wl_surface#3.commit()
+
+{Default Queue} xdg_wm_base#6.ping(1337)
+{Default Queue}  -> xdg_wm_base#6.pong(1337)
