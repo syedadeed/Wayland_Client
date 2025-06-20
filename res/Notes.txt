@@ -1,0 +1,56 @@
+Wayland uses the wire protocol format to communicate with the client
+
+It is a binary communication format used b/w client and server
+
+This protocol is described by an XML specification that defines interfaces, messages, events etc
+from this XML, code is generated for both clients and servers using wayland-scanner
+
+The messages are sent over Unix sockets
+
+When client sends data to server it is called a request
+When server sends data to client it is called an event
+
+an "Interface" acts like an abstract class for an wayland object, its like ABC in python
+
+xdg bs is basically used to assign the role of Application window to wl_surface
+
+#Initialization steps
+Make display
+Make registry
+Make global object handler
+Make registry handler and give it the global object handler
+Add registry handler to registry
+Block any further steps until all initial global objects have been recieved; using wl_display_roundtrip
+Get compositor
+Get shared Memory
+Make shared Memory pool; give it the allocated shared memory fd and shared memory global object
+Make a buffer from the shared memory pool
+Make a wayland surface object
+Make a buffer_ready boolean variable
+
+#Application Loop
+while (running){
+    wl_display_dispatch
+    if (!buffer_ready) => continue
+    render(buffer)
+    attach the buffer to surface and commit it
+    cb = wl_surface_frame(surface)
+    wl_callback_add_listener(cb, &frame_listener, NULL) => in the callback function set buffer_ready to true
+    wl_display_flush
+    buffer_ready = false
+}
+
+#Cleanup
+
+Wayland wire protocol
+wayland proxy => all wayland objects on the client side are derived from wl_proxy
+Wayland high level protocol
+wayland objects
+wayland listners => for listning to incomming requests
+wayalnd interfaces => abstract class of wayland objects
+
+
+Goal
+Layers of Abstraction
+Wayland client-server communication protocol
+Core wayland designs => wl_proxy, wayland objects and interfaces
