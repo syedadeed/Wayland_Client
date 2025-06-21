@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 
 typedef struct{
+    int window_resized;
     int window_exist;
     int WIDTH;
     int HEIGHT;

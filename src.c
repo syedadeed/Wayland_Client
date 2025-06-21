@@ -1,12 +1,13 @@
 #include "src.h"
 
 void init_master(Master* m){
-    m->WIDTH = 1366;
-    m->HEIGHT = 768;
+    m->WIDTH = 500;
+    m->HEIGHT = 400;
     m->PIXEL_SIZE = 4;
     m->PIXEL_FORMAT = WL_SHM_FORMAT_ARGB8888;
     m->pixels = NULL;
     m->window_exist = 1;
+    m->window_resized = 0;
 
     m->registry_listner.global = global_object_handler;
     m->xdg_shell_listener.ping = xdg_ping;
@@ -28,6 +29,9 @@ void init_master(Master* m){
     m->toplevel = xdg_surface_get_toplevel(m->xdg_base_surface);
     xdg_toplevel_add_listener(m->toplevel, &(m->toplevel_listener), (void*)m);
 
+    xdg_toplevel_set_app_id(m->toplevel, "Fuck");
+    // xdg_toplevel_set_fullscreen(m->toplevel, m->output_screen);
+
     wl_surface_commit(m->surface);
 }
 
@@ -47,11 +51,18 @@ void global_object_handler(void* data, struct wl_registry* registry, uint32_t na
 
 void toplevel_capabs(void *data, struct xdg_toplevel *xdg_toplevel, struct wl_array *capabilities){
     Master* m = (Master*)data;
-    // xdg_toplevel_set_fullscreen(m->toplevel, m->output_screen);
 }
 
 void toplevel_configure(void *data, struct xdg_toplevel *xdg_toplevel, int32_t width, int32_t height, struct wl_array *states){
     Master* m = (Master*)data;
+    if(width == 0 || height == 0) return;
+
+    if(m->WIDTH != width || m->HEIGHT != height){
+        if(m->window_resized == 0) munmap(m->pixels, m->WIDTH * m->HEIGHT * m->PIXEL_SIZE);
+        m->WIDTH = width;
+        m->HEIGHT = height;
+        m->window_resized = 1;
+    }
 }
 
 void xdg_surface_configure(void *data, struct xdg_surface *x_surface, uint32_t serial){
@@ -74,6 +85,16 @@ void new_frame(void *data, struct wl_callback *wl_frame_callback, uint32_t callb
     Master* m = (Master*)data;
     wl_callback_destroy(wl_frame_callback);
     wl_callback_add_listener(wl_surface_frame(m->surface), &(m->frame_cb_listener), (void*)m);
+    if(m->window_resized == 1){
+        wl_buffer_destroy(m->shared_buffer);
+        wl_shm_pool_destroy(m->shared_memory_pool);
+        close(m->fd);
+        m->fd = allocate_shared_memory(m->WIDTH * m->HEIGHT * m->PIXEL_SIZE);
+        m->pixels = mmap(NULL, m->WIDTH * m->HEIGHT * m->PIXEL_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, m->fd, 0);
+        m->shared_memory_pool = wl_shm_create_pool(m->shared_memory, m->fd, m->WIDTH * m->HEIGHT * m->PIXEL_SIZE);
+        m->shared_buffer = wl_shm_pool_create_buffer(m->shared_memory_pool, 0, m->WIDTH, m->HEIGHT, m->WIDTH * 4, m->PIXEL_FORMAT); // WIDTH * 4 is the stride
+        m->window_resized = 0;
+    }
     draw(m);
     wl_surface_attach(m->surface, m->shared_buffer, 0, 0);
     wl_surface_damage_buffer(m->surface, 0, 0, m->WIDTH, m->HEIGHT);
