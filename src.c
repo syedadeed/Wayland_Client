@@ -16,6 +16,16 @@ void init_master(Master* m){
     m->toplevel_listener.configure = toplevel_configure;
     m->toplevel_listener.close = toplevel_closed;
     m->toplevel_listener.wm_capabilities = toplevel_capabs;
+    m->seat_listener.capabilities = seat_capabs;
+    m->seat_listener.name = seat_name;
+    m->keyboard_listener.keymap = kb_get_keymap;
+    m->keyboard_listener.key = kb_get_key;
+    m->keyboard_listener.modifiers = kb_get_modifiers;
+    m->keyboard_listener.enter = kb_surface_enter;
+    m->keyboard_listener.leave = kb_surface_leave;
+    m->keyboard_listener.repeat_info = kb_repeat_info;
+
+    m->kb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
     m->display = wl_display_connect(NULL);
     m->registry = wl_display_get_registry(m->display);
@@ -46,11 +56,18 @@ void global_object_handler(void* data, struct wl_registry* registry, uint32_t na
     }else if(!strcmp(interface, xdg_wm_base_interface.name)){
         m->xdg_shell = wl_registry_bind(registry, name, &xdg_wm_base_interface, version);
         xdg_wm_base_add_listener(m->xdg_shell, &(m->xdg_shell_listener), (void*)m);
+    }else if(!strcmp(interface, wl_seat_interface.name)){
+        m->seat = wl_registry_bind(registry, name, &wl_seat_interface, version);
+        wl_seat_add_listener(m->seat, &(m->seat_listener), (void*)m);
     }
 }
 
-void toplevel_capabs(void *data, struct xdg_toplevel *xdg_toplevel, struct wl_array *capabilities){
+void seat_capabs(void *data, struct wl_seat *wl_seat, uint32_t capabilities){
     Master* m = (Master*)data;
+    if((capabilities & WL_SEAT_CAPABILITY_KEYBOARD) > 0){
+        m->keyboard = wl_seat_get_keyboard(m->seat);
+        wl_keyboard_add_listener(m->keyboard, &(m->keyboard_listener), (void*)m);
+    }
 }
 
 void toplevel_configure(void *data, struct xdg_toplevel *xdg_toplevel, int32_t width, int32_t height, struct wl_array *states){
@@ -101,9 +118,38 @@ void new_frame(void *data, struct wl_callback *wl_frame_callback, uint32_t callb
     wl_surface_commit(m->surface);
 }
 
+void kb_get_keymap(void *data, struct wl_keyboard *wl_keyboard, uint32_t format, int32_t fd, uint32_t size){
+    Master* m = (Master*)data;
+    assert(format == WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1);
+    char* map_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    assert(map_shm != MAP_FAILED);
+    m->kb_keymap = xkb_keymap_new_from_string(m->kb_context, map_shm, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+    m->kb_state = xkb_state_new(m->kb_keymap);
+    munmap(map_shm, size);
+    close(fd);
+}
+
+void kb_get_key(void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state){
+    if(state == WL_KEYBOARD_KEY_STATE_RELEASED) return;
+    Master* m = (Master*)data;
+    xkb_keysym_t symbol = xkb_state_key_get_one_sym(m->kb_state, key + 8); //Must add 8
+    switch(symbol){
+        case XKB_KEY_A:
+            printf("A\n");break;
+        case XKB_KEY_a:
+            printf("a\n");break;
+    }
+}
+
+void kb_get_modifiers(void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group){
+    Master* m = (Master*)data;
+    xkb_state_update_mask(m->kb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
+}
+
 void destroy_master(Master* m){
     wl_buffer_destroy(m->shared_buffer);
     close(m->fd);
+    wl_seat_release(m->seat);
     wl_display_disconnect(m->display);
 }
 
@@ -128,3 +174,9 @@ void toplevel_closed(void *data, struct xdg_toplevel *xdg_toplevel){
     Master* m = (Master*)data;
     m->window_exist = 0;
 }
+
+void seat_name(void *data, struct wl_seat *wl_seat, const char *name){}
+void toplevel_capabs(void *data, struct xdg_toplevel *xdg_toplevel, struct wl_array *capabilities){}
+void kb_surface_enter(void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys){}
+void kb_surface_leave(void *data, struct wl_keyboard *wl_keyboard, uint32_t serial, struct wl_surface *surface){}
+void kb_repeat_info(void *data, struct wl_keyboard *wl_keyboard, int32_t rate, int32_t delay){}
